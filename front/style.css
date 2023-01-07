@@ -1,0 +1,79 @@
+li {
+  list-style: none;
+}
+
+.hidden {
+  display: none;
+}
+
+.box {
+  width: 800px;
+  border: 1px solid black;
+  margin: 100px auto 0;
+  background: rgb(34, 34, 0);
+  background: linear-gradient(180deg, rgba(34, 34, 0, 0.18672979445684523) 13%, rgba(33, 121, 9, 0.3323880577621674) 32%);
+}
+
+.title {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.add-todo {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.check-all-todos {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+  gap: 20px;
+}
+
+#filterTodos {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 50px;
+}
+
+#deleteAllCompleted {
+  display: block;
+  margin: 0 auto;
+  margin-top: 15px;
+}
+
+#pageList {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 5px;
+  margin-left: 150px;
+  margin-right: 150px;
+}
+
+#inputAdd {
+  width: 300px;
+}
+
+#myBtnStyle {
+  height: 40px;
+}
+
+li>span {
+  max-width: 80%;
+  word-wrap: break-word;
+}
