@@ -32,7 +32,7 @@
         allTodos.textContent = `All ${counts.active + counts.completed}`;
         activeTodos.textContent = `Active ${counts.active}`;
         completedTodos.textContent = `Completed ${counts.completed}`;
-        checkAllButton.checked = counts.active === 0;
+        checkAllButton.checked = (counts.active === 0) && (counts.completed > 0);
       })
   };
 
