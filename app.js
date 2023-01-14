@@ -96,55 +96,97 @@ app.get('/api/todos/count', (request, response) => {
         .catch(error => sendError(error, response));
 });
 
-app.post('/api/todos', jsonParser, (request, response) => {
-    if (!request.body)
-        response.status(400).json({ error: "Undefined body" });
-    else {
-        db.CreateTodo(user, {
-            text: request.body.text,
-            ischecked: request.body.isChecked,
-        })
-            .then(res => {
-                response.json(res);
-            })
-            .catch(error => sendError(error, response));
+app.post('/api/todos', jsonParser, async (request, response) => {
+
+    try {
+        const { text, isChecked, token } = request.body;
+        const { id } = await db.User.findOne({
+            where: {
+                token: token
+            }
+        });
+        await db.Todo.create({
+            text: text,
+            ischecked: isChecked,
+            userId: id
+        });
+        response.json({});
+    } catch (error) {
+        response.status(400).json({ error: error.message });
     }
+}
 
+)
+
+app.put('/api/todos', async (request, response) => {
+    try {
+        const { isChecked, token } = request.query;
+        const { id } = await db.User.findOne({
+            where: {
+                token: token
+            }
+        });
+        await db.Todo.update(
+            { ischecked: isChecked },
+            { where: { userId: id } }
+        );
+        response.json({});
+    } catch (error) {
+        response.status(400).json({ error: error.message });
+    }
 })
 
-app.put('/api/todos', (request, response) => {
-    db.Todo.update({ ischecked: request.query.isChecked }, { where: {} })
-        .then(todos => {
-            response.json(todos);
+app.put('/api/todos/:id', jsonParser, async (request, response) => {
+    try {
+        const user = await db.User.findOne({
+            where: {
+                token: request.body.token
+            }
+        });
+
+        const obj = {}
+        if (request.body.isChecked !== undefined) obj.ischecked = request.body.isChecked;
+        if (request.body.text !== undefined) obj.text = request.body.text;
+
+        await db.Todo.update(obj, {
+            where: {
+                id: request.params.id,
+                userId: user.id
+            }
         })
-        .catch(error => sendError(error, response));
+        response.json({});
+    } catch (error) {
+        response.status(400).json({ error: error.message });
+    }
 })
 
-app.put('/api/todos/:id', jsonParser, (request, response) => {
-    const obj = {}
 
-    if (request.body.isChecked !== undefined) obj.ischecked = request.body.isChecked;
-    if (request.body.text !== undefined) obj.text = request.body.text;
 
-    db.Todo.update(obj, { where: { id: request.params.id } })
-        .then(count => {
-            response.json({ count: count[0] });
-        })
-        .catch(error => sendError(error, response));
-})
 
-app.delete('/api/todos', (request, response) => {
-    const obj = {};
-    if (request.query.id !== undefined) obj.id = request.query.id;
-    if (request.query.isChecked !== undefined) obj.ischecked = request.query.isChecked;
 
-    db.Todo.destroy({
-        where: obj
-    })
-        .then((res) => {
-            response.json({ deleted: res });
-        })
-        .catch(error => sendError(error, response));
+app.delete('/api/todos', async (request, response) => {
+    try {
+        const user = await db.User.findOne({
+            where: {
+                token: request.query.token
+            }
+        });
+        const obj = {
+            userId: user.id
+        };
+        if (request.query.id !== undefined) obj.id = request.query.id;
+        if (request.query.isChecked !== undefined) obj.ischecked = request.query.isChecked;
+        if (Object.keys(obj).length > 1) {
+            const result = await db.Todo.destroy({
+                where: obj
+            })
+            response.json({ deleted: result });
+        } else {
+            throw new Error('Bad request')
+        }
+    } catch (error) {
+        response.status(400).json({ error: error.message });
+    }
 })
 
 app.listen(3000);

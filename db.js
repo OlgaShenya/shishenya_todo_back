@@ -32,7 +32,6 @@ module.exports.User = sequelize.define('user', {
     }
 });
 
-this.User.hasOne(this.Todo);
 this.Todo.belongsTo(this.User, {
     onDelete: 'cascade',
     foreignKey: {
@@ -41,13 +40,6 @@ this.Todo.belongsTo(this.User, {
     }
 });
 
-module.exports.CreateTodo = (user, todo) => {
-    return this.Todo.create({
-        text: todo.text,
-        isChecked: todo.isChecked,
-        userId: user.id
-    });
-};
 
 module.exports.sql = (sql) => {
     return sequelize.query(sql);
