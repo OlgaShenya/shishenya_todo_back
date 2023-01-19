@@ -64,7 +64,7 @@ app.use((request, response, next) => {
             request.userId = payload.id;
         }
     )
-    next();
+    if (request.userId) next();
 })
 
 /**************************************************************************************/
