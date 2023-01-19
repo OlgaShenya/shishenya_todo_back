@@ -6,10 +6,22 @@ li {
   display: none;
 }
 
+.auth_header {
+  width: 800px;
+  border: 1px solid black;
+  margin: 50px auto 0;
+  padding: 15px;
+  display: flex;
+  justify-content: right;
+  gap: 5px;
+  background: rgb(34, 34, 0);
+
+}
+
 .box {
   width: 800px;
   border: 1px solid black;
-  margin: 100px auto 0;
+  margin: 0 auto 0;
   background: rgb(34, 34, 0);
   background: linear-gradient(180deg, rgba(34, 34, 0, 0.18672979445684523) 13%, rgba(33, 121, 9, 0.3323880577621674) 32%);
 }

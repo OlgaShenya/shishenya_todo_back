@@ -1,4 +1,4 @@
-#auth {
+#auth_form {
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -7,7 +7,7 @@
     padding: 10px;
     position: absolute;
     top: 25vh;
-    left: 25vw;
+    left: 40%;
     background-color: grey;
     visibility: hidden;
 }

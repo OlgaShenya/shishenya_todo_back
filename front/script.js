@@ -12,7 +12,8 @@
   const completedTodos = document.getElementById('completedTodos');
   const filterTodosList = document.getElementById('filterTodos');
   const pageList = document.getElementById('pageList');
-  const authForm = document.getElementById('auth');
+  const authForm = document.getElementById('auth_form');
+  const logoutBtn = document.getElementById('auth_logout');
   const PAGE_SIZE = 5;
   const { _ } = window;
 
@@ -256,6 +257,11 @@
     render();
   };
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    location.reload();
+  }
+
   addButton.addEventListener('click', addTask);
   addInput.addEventListener('keydown', checkKey);
   checkAllButton.addEventListener('click', checkAllTasks);
@@ -265,6 +271,7 @@
   deleteAllCompleted.addEventListener('click', deleteAllDone);
   filterTodosList.addEventListener('click', changeFilterStatus);
   pageList.addEventListener('click', setPage);
+  logoutBtn.addEventListener('click', logout);
 
   render();
 })();
