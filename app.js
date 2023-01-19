@@ -3,6 +3,9 @@ const jsonParser = express.json();
 const db = require('./db');
 const app = express();
 const MD5 = require("crypto-js/md5");
+const jwt = require('jsonwebtoken');
+
+const signature = 'MySuP3R_z3kr3t';
 
 /************************************************************************************* */
 app.get('/', (_, response) => {
@@ -13,180 +16,102 @@ app.get('/:file', (request, response) => {
     response.sendFile('C:\\IT\\Dunice\\shishenya_todo_back\\front\\' + request.params.file);
 })
 /**************************************************************************************/
-const sendError = (err, response) => { response.status(500).json({ error: err.message }) }
 /**************************************************************************************/
 app.get('/api/auth', (_, response) => {
     response.sendFile('C:\\IT\\Dunice\\shishenya_todo_back\\front\\auth.html');
 })
 
 // РОУТЕР
-app.post('/api/auth', jsonParser, async (request, response) => {
+app.post('/api/signup', jsonParser, async (request, response) => {
+
     const { login, password } = request.body;
+    const user = await db.CreateUser(login, password);
 
-    // select id,login from users where login='' and password=''
-    let [user] = await db.User.findAll({
-        attributes: ['id', 'login'],
-        where: {
-            login: login || "nologin",
-            password: password || "nopassword"
-        }
-    });
-
-    if (user) {
-        let token = MD5(JSON.stringify(user) + Date.now().toString()).toString();
-        db.User.update({ token: token }, { where: { id: user.id } });
-        response.json({ token: token });
+    if (user.error) {
+        response.status(400).json({ error: 'Cannot create user' });
         return;
     }
-    response.json({ error: 'Incorrect login or password' });
+    response.json({});
 })
-/**************************************************************************************/
-app.get('/api/todos', (request, response) => {
-    const { page, size, active, token } = request.query;
 
-    db.Todo.findAndCountAll({
-        order: [['id', 'ASC']],
-        limit: size || 5,
-        offset: (page || 0) * (size || 5),
-        include: [{
-            model: db.User,
-            where: {
-                token: token
-            }
-        }],
-        where: (active !== undefined) ? {
-            ischecked: active
-        } : {}
-    }).then(todos => {
-        response.json(todos);
-    }).catch(error => sendError(error, response));
-});
+app.post('/api/signin', jsonParser, async (request, response) => {
+    const { login, password } = request.body;
+    const user = await db.GetUser(login, password);
 
-app.get('/api/todos/count', (request, response) => {
-    const { token } = request.query;
+    if (user.error) {
+        response.status(401).json({ error: 'Incorrect login or password' });
+        return;
+    }
 
-    db.User.count({
-        group: ['user.id', 'todo.ischecked'],
-        where: {
-            token: token
-        },
-        include: [{
-            model: db.Todo
-        }],
-    })
-        .then(counts => {
-            if (counts.length == 0) {
-                response.status(401).json({ error: 'Bad token' });
+    const token = jwt.sign(user, signature);
+    response.json({ token: token });
+
+})
+
+app.use((request, response, next) => {
+    if (!request.headers.authorization) {
+        response.status(401).json({ error: "token is not provided" });
+        return;
+    }
+    jwt.verify(
+        request.headers.authorization,
+        signature,
+        (error, payload) => {
+            if (error) {
+                response.status(403).json({ error: error.message });
                 return;
             }
-            let res = {
-                active: 0,
-                completed: 0,
-            };
-            counts.forEach(item => {
-                if (item.ischecked === null) return;
-                if (item.ischecked) {
-                    res.completed = item.count;
-                } else {
-                    res.active = item.count;
-                }
-            });
-            response.json(res);
-        })
-        .catch(error => sendError(error, response));
+            request.userId = payload.id;
+        }
+    )
+    next();
+})
+
+/**************************************************************************************/
+app.get('/api/todos', async (request, response) => {
+    const { pageNumber, pageSize, isChecked } = request.query;
+    const result = await db.GetTodo(pageSize, pageNumber, request.userId, isChecked);
+    if (result.error) response.status(400);
+    response.json(result);
+});
+
+app.get('/api/todos/count', async (request, response) => {
+    const result = await db.CountTodo(request.userId);
+    if (result.error) response.status(400);
+    response.json(result);
 });
 
 app.post('/api/todos', jsonParser, async (request, response) => {
+    const { text, isChecked } = request.body;
+    const result = await db.CreateTodo(request.userId, text, isChecked);
+    if (result.error) response.status(400);
+    response.json(result);
+})
 
-    try {
-        const { text, isChecked, token } = request.body;
-        const { id } = await db.User.findOne({
-            where: {
-                token: token
-            }
-        });
-        await db.Todo.create({
-            text: text,
-            ischecked: isChecked,
-            userId: id
-        });
-        response.json({});
-    } catch (error) {
-        response.status(400).json({ error: error.message });
-    }
-}
-
-)
-
-app.put('/api/todos', async (request, response) => {
-    try {
-        const { isChecked, token } = request.query;
-        const { id } = await db.User.findOne({
-            where: {
-                token: token
-            }
-        });
-        await db.Todo.update(
-            { ischecked: isChecked },
-            { where: { userId: id } }
-        );
-        response.json({});
-    } catch (error) {
-        response.status(400).json({ error: error.message });
-    }
+app.put('/api/todos', jsonParser, async (request, response) => {
+    const { isChecked } = request.body;
+    const result = await db.UpdateTodoIschecked(isChecked, request.userId);
+    if (result.error) response.status(400);
+    response.json(result);
 })
 
 app.put('/api/todos/:id', jsonParser, async (request, response) => {
-    try {
-        const user = await db.User.findOne({
-            where: {
-                token: request.body.token
-            }
-        });
-
-        const obj = {}
-        if (request.body.isChecked !== undefined) obj.ischecked = request.body.isChecked;
-        if (request.body.text !== undefined) obj.text = request.body.text;
-
-        await db.Todo.update(obj, {
-            where: {
-                id: request.params.id,
-                userId: user.id
-            }
-        })
-        response.json({});
-    } catch (error) {
-        response.status(400).json({ error: error.message });
-    }
+    const { isChecked, text } = request.body;
+    const result = await db.UpdateTodo(isChecked, text, request.params.id);
+    if (result.error) response.status(400);
+    response.json(result);
 })
 
-
-
-
-
 app.delete('/api/todos', async (request, response) => {
-    try {
-        const user = await db.User.findOne({
-            where: {
-                token: request.query.token
-            }
-        });
-        const obj = {
-            userId: user.id
-        };
-        if (request.query.id !== undefined) obj.id = request.query.id;
-        if (request.query.isChecked !== undefined) obj.ischecked = request.query.isChecked;
-        if (Object.keys(obj).length > 1) {
-            const result = await db.Todo.destroy({
-                where: obj
-            })
-            response.json({ deleted: result });
-        } else {
-            throw new Error('Bad request')
-        }
-    } catch (error) {
-        response.status(400).json({ error: error.message });
-    }
+    const result = await db.DeleteTodo(request.query.id);
+    if (result.error) response.status(400);
+    response.json(result);
+})
+
+app.delete('/api/todos/completed', async (request, response) => {
+    const result = await db.DeleteTodoChecked(request.userId);
+    if (result.error) response.status(400);
+    response.json(result);
 })
 
 app.listen(3000);
