@@ -5,6 +5,11 @@
     width: 300px;
     border: 1px solid black;
     padding: 10px;
+    position: absolute;
+    top: 25vh;
+    left: 25vw;
+    background-color: grey;
+    visibility: hidden;
 }
 
 #login,

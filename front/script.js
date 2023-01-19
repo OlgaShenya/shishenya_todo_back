@@ -4,6 +4,7 @@
   const list = document.querySelector('ul');
   const checkAllButton = document.getElementById('checkAll');
   const deleteAllCompleted = document.getElementById('deleteAllCompleted');
+  const auth = document.getElementById('auth');
   const ENTER_BUTTON = 'Enter';
   const ESCAPE_BUTTON = 'Escape';
   const allTodos = document.getElementById('allTodos');
@@ -11,10 +12,22 @@
   const completedTodos = document.getElementById('completedTodos');
   const filterTodosList = document.getElementById('filterTodos');
   const pageList = document.getElementById('pageList');
+  const authForm = document.getElementById('auth');
   const PAGE_SIZE = 5;
   const { _ } = window;
 
   let currentPage = 1;
+
+  const setHeaders = (headers) => {
+    if (localStorage.token) {
+      return {
+        ...headers,
+        'Authorization': localStorage.token,
+      }
+    } else {
+      return headers;
+    }
+  }
 
 
   const showPageBtns = (pageCount) => {
@@ -26,7 +39,7 @@
   };
 
   const countTodoTypes = () => {
-    fetch('http://localhost:3000/api/todos/count')
+    fetch('http://localhost:3000/api/todos/count', { headers: setHeaders() })
       .then(response => response.json())
       .then(counts => {
         allTodos.textContent = `All ${counts.active + counts.completed}`;
@@ -39,17 +52,18 @@
   const render = async () => {
     let li = '';
     let filter = getFilter();
-    let active = (filter !== undefined) ? `&active=${filter}` : '';
-    let response = await fetch(`http://localhost:3000/api/todos?page=${currentPage - 1}&size=${PAGE_SIZE}${active}`);
+    let active = (filter !== undefined) ? `&isChecked=${filter}` : '';
+    let response = await fetch(`http://localhost:3000/api/todos?pageNumber=${currentPage - 1}&pageSize=${PAGE_SIZE}${active}`, { headers: setHeaders() });
     let todos = await response.json();
 
-    showPageBtns(Math.ceil(todos.count / PAGE_SIZE));
+    if (!response.ok) authForm.style.visibility = 'visible';
+    showPageBtns(Math.ceil(todos.total / PAGE_SIZE));
     todos.rows.forEach((item) => {
-      const checked = item.ischecked ? 'checked' : '';
+      const checked = item.isChecked ? 'checked' : '';
       li += `<li id=${item.id}>
           <input type="checkbox" ${checked}>
           <span>${item.text}</span>
-          <input type="text" id="inputEdit" class="hidden" value="${item.text}">
+          <input type="text" class="inputEdit hidden" value="${item.text}">
           <button id="myBtnStyle" type="button" class="btn btn-success">X</button></li>`;
     });
     list.innerHTML = li;
@@ -82,9 +96,9 @@
 
       let response = await fetch('http://localhost:3000/api/todos', {
         method: 'POST',
-        headers: {
+        headers: setHeaders({
           'Content-Type': 'application/json;charset=utf-8'
-        },
+        }),
         body: JSON.stringify(task)
       });
 
@@ -111,7 +125,11 @@
 
   const checkAllTasks = (event) => {
     fetch(`http://localhost:3000/api/todos?isChecked=${event.target.checked}`, {
-      method: 'PUT'
+      method: 'PUT',
+      headers: setHeaders({
+        'Content-type': 'application/json; charset=UTF-8'
+      }),
+      body: JSON.stringify({ isChecked: event.target.checked })
     })
       .then(response => {
         if (response.ok) {
@@ -125,9 +143,9 @@
   const checkTask = (event) => {
     fetch(`http://localhost:3000/api/todos/${event.target.parentNode.id}`, {
       method: 'PUT',
-      headers: {
+      headers: setHeaders({
         'Content-type': 'application/json; charset=UTF-8'
-      },
+      }),
       body: JSON.stringify({ isChecked: event.target.checked })
     })
       .then(response => {
@@ -140,12 +158,12 @@
   };
 
   const renameTask = (event) => {
-    if (event.target.id === 'inputEdit') {
+    if (event.target.classList.contains('inputEdit')) {
       fetch(`http://localhost:3000/api/todos/${event.target.parentNode.id}`, {
         method: 'PUT',
-        headers: {
+        headers: setHeaders({
           'Content-type': 'application/json; charset=UTF-8'
-        },
+        }),
         body: JSON.stringify({ text: validateTask(_.escape(event.target.value)) })
       })
         .then(response => {
@@ -172,6 +190,7 @@
   const deleteTask = (event) => {
     fetch(`http://localhost:3000/api/todos?id=${event.target.parentNode.id}`, {
       method: 'DELETE',
+      headers: setHeaders(),
     })
       .then(response => {
         if (response.ok) {
@@ -183,8 +202,9 @@
   };
 
   const deleteAllDone = () => {
-    fetch(`http://localhost:3000/api/todos?isChecked=true`, {
+    fetch(`http://localhost:3000/api/todos/completed`, {
       method: 'DELETE',
+      headers: setHeaders()
     })
       .then(response => {
         if (response.ok) {
