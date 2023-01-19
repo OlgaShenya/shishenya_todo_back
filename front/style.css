@@ -12,10 +12,25 @@ li {
   margin: 50px auto 0;
   padding: 15px;
   display: flex;
-  justify-content: right;
+  justify-content: space-between;
+  align-items: center;
   gap: 5px;
   background: rgb(34, 34, 0);
 
+}
+
+.auth_header p {
+  color: white;
+  font-size: 30px;
+  font-style: italic;
+  /* padding-left: 10%; */
+  letter-spacing: 0.3em;
+
+}
+
+#auth_logout {
+  width: 15%;
+  height: 8%;
 }
 
 .box {
@@ -29,7 +44,7 @@ li {
 .title {
   display: flex;
   justify-content: center;
-  margin: 0 auto;
+  margin: 10px 0 auto;
 }
 
 .add-todo {
