@@ -2,26 +2,23 @@ const express = require('express');
 const jsonParser = express.json();
 const db = require('./db');
 const app = express();
-const MD5 = require("crypto-js/md5");
 const jwt = require('jsonwebtoken');
+const { dirname } = require('path');
+const appDir = dirname(require.main.filename);
 
 const signature = 'MySuP3R_z3kr3t';
 
+// http://myserver.com/api/todos
+
 /************************************************************************************* */
 app.get('/', (_, response) => {
-    response.sendFile('C:\\IT\\Dunice\\shishenya_todo_back\\front\\index.html');
+    response.sendFile(`${appDir}\\front\\index.html`);
 })
 
-app.get('/:file', (request, response) => {
-    response.sendFile('C:\\IT\\Dunice\\shishenya_todo_back\\front\\' + request.params.file);
-})
+app.use('/css', express.static(`${appDir}\\front\\css`));
+app.use('/js', express.static(`${appDir}\\front\\js`));
 /**************************************************************************************/
 /**************************************************************************************/
-app.get('/api/auth', (_, response) => {
-    response.sendFile('C:\\IT\\Dunice\\shishenya_todo_back\\front\\auth.html');
-})
-
-// РОУТЕР
 app.post('/api/signup', jsonParser, async (request, response) => {
 
     const { login, password } = request.body;

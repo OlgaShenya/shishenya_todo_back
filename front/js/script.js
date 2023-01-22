@@ -14,6 +14,7 @@
   const pageList = document.getElementById('pageList');
   const authForm = document.getElementById('auth_form');
   const logoutBtn = document.getElementById('auth_logout');
+  const userName = document.getElementById('userName');
   const PAGE_SIZE = 5;
   const { _ } = window;
 
@@ -68,7 +69,9 @@
           <button id="myBtnStyle" type="button" class="btn btn-success">X</button></li>`;
     });
     list.innerHTML = li;
+    userName.textContent = localStorage.getItem('userName');
     countTodoTypes();
+
   };
 
   const validateTask = (text) => {
@@ -259,6 +262,7 @@
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userName');
     location.reload();
   }
 
